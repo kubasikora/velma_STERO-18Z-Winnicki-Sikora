@@ -17,8 +17,8 @@
       <ambient>0.2 0.2 0.2 1</ambient>
       <background>1 1 1 1</background>
       <shadows>0</shadows>
-      <grid>0</grid>
-      <origin_visual>0</origin_visual>
+      <grid>1</grid>
+      <origin_visual>1</origin_visual>
     </scene>
     <gravity>0 0 -9.8</gravity>
     <magnetic_field>6e-06 2.3e-05 -4.2e-05</magnetic_field>

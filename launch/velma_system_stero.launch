@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
     <arg name="use_kinect" default="false"/>
-    <arg name="world_name" default="worlds/blank.world"/>
+    <arg name="world_name" />
     <arg name="GAZEBO_MODEL_PATH" default=""/>
     <arg name="GAZEBO_RESOURCE_PATH" default=""/>
 
@@ -18,8 +18,8 @@
       <arg name="gui" default="false"/>
       <arg name="sim_clock_period" default="0.002"/>
       <arg name="load_robot_description" default="true"/>
-      <arg name="GAZEBO_MODEL_PATH" value="$(arg GAZEBO_MODEL_PATH):$(find stero_velma)/data/gazebo/models"/>
-      <arg name="GAZEBO_RESOURCE_PATH" value="$(arg GAZEBO_RESOURCE_PATH):$(find stero_velma)/data/gazebo"/>
+      <arg name="GAZEBO_MODEL_PATH" value="$(arg GAZEBO_MODEL_PATH):$(find rcprg_gazebo_utils)/data/gazebo/models:$(find stero_velma)/data/gazebo/models"/>
+      <arg name="GAZEBO_RESOURCE_PATH" value="$(arg GAZEBO_RESOURCE_PATH):$(find rcprg_gazebo_utils)/data/gazebo:$(find stero_velma)/data/gazebo"/>
     </include>
 
 	<include file="$(find velma_core_ve_body)/launch/velma_core_ve_body.launch" />
