@@ -1,17 +1,16 @@
 <?xml version="1.0"?>
 <launch>
     <arg name="use_kinect" default="false"/>
+    <arg name="world_name" default="worlds/empty.world" />
     <arg name="GAZEBO_MODEL_PATH" default=""/>
     <arg name="GAZEBO_RESOURCE_PATH" default=""/>
 
-    <env name="GAZEBO_MODEL_PATH" value="$(find rcprg_gazebo_utils)/data/gazebo/models" />
 	<include file="$(find velma_sim_gazebo)/launch/velma_gazebo_re.launch">
-      <arg name="world_name" value="$(find rcprg_gazebo_utils)/data/gazebo/worlds/stero_01.sdf"/> <!-- Note: the world_name is with respect to GAZEBO_RESOURCE_PATH environmental variable -->
+      <arg name="world_name" value="$(arg world_name)"/> <!-- Note: the world_name is with respect to GAZEBO_RESOURCE_PATH environmental variable -->
       <arg name="use_kinect" default="$(arg use_kinect)"/>
       <arg name="gui" default="false"/>
-      <arg name="sim_clock_period" default="0.002"/>
-      <arg name="GAZEBO_MODEL_PATH" value="$(arg GAZEBO_MODEL_PATH):$(find stero_velma)/data/gazebo/models"/>
-      <arg name="GAZEBO_RESOURCE_PATH" value="$(arg GAZEBO_RESOURCE_PATH):$(find stero_velma)/data/gazebo"/>
+      <arg name="GAZEBO_MODEL_PATH" value="$(arg GAZEBO_MODEL_PATH):$(find rcprg_gazebo_utils)/data/gazebo/models:$(find stero_velma)/data/gazebo/models"/>
+      <arg name="GAZEBO_RESOURCE_PATH" value="$(arg GAZEBO_RESOURCE_PATH):$(find rcprg_gazebo_utils)/data/gazebo:$(find stero_velma)/data/gazebo"/>
     </include>
 </launch>
 
