@@ -23,10 +23,20 @@
     <gravity>0 0 -9.8</gravity>
     <magnetic_field>6e-06 2.3e-05 -4.2e-05</magnetic_field>
     <atmosphere type='adiabatic'/>
-    <physics name='default_physics' default='0' type='ode'>
-      <max_step_size>0.003</max_step_size>
+    <physics name='dart_1ms' default='1' type='ode'>
+      <max_step_size>0.001</max_step_size>
       <real_time_factor>1</real_time_factor>
       <real_time_update_rate>1000</real_time_update_rate>
+    </physics>
+    <physics name='dart_2ms' default='0' type='dart'>
+      <max_step_size>0.002</max_step_size>
+      <real_time_factor>1</real_time_factor>
+      <real_time_update_rate>500</real_time_update_rate>
+    </physics>
+    <physics name='dart_3ms' default='0' type='dart'>
+      <max_step_size>0.003</max_step_size>
+      <real_time_factor>1</real_time_factor>
+      <real_time_update_rate>333</real_time_update_rate>
     </physics>
     <spherical_coordinates>
       <surface_model>EARTH_WGS84</surface_model>
@@ -374,9 +384,9 @@
     </model>
     <state world_name='default'>
       <sim_time>382 861000000</sim_time>
-      <real_time>286 285225071</real_time>
-      <wall_time>1509376686 218388341</wall_time>
-      <iterations>284848</iterations>
+      <real_time>0 0</real_time>
+      <wall_time>1509544165 183007058</wall_time>
+      <iterations>0</iterations>
       <model name='bookshelf'>
         <pose frame=''>0.099534 -1.13982 0 0 -0 3.08995</pose>
         <scale>1 1 1</scale>
@@ -397,24 +407,34 @@
           <wrench>0 0 0 0 -0 0</wrench>
         </link>
       </model>
+      <model name='dummy'>
+        <pose frame=''>0.341573 -0.883181 0.810921 0.003502 -0.010163 0.182756</pose>
+        <scale>1 1 1</scale>
+        <link name='link'>
+          <pose frame=''>0.341573 -0.883181 0.810921 0.003502 -0.010163 0.182756</pose>
+          <velocity>0 0 0 0 -0 0</velocity>
+          <acceleration>0 0 0 0 -0 0</acceleration>
+          <wrench>0 0 0 0 -0 0</wrench>
+        </link>
+      </model>
+      <model name='ground_plane'>
+        <pose frame=''>1.04473 0.134028 0 0 -0 0</pose>
+        <scale>1 1 1</scale>
+        <link name='link'>
+          <pose frame=''>1.04473 0.134028 0 0 -0 0</pose>
+          <velocity>0 0 0 0 -0 0</velocity>
+          <acceleration>0 0 0 0 -0 0</acceleration>
+          <wrench>0 0 0 0 -0 0</wrench>
+        </link>
+      </model>
       <model name='jar'>
         <pose frame=''>0.622755 0.0744 0.874996 0.000725 7.1e-05 0.633357</pose>
         <scale>1 1 1</scale>
         <link name='link'>
           <pose frame=''>0.622755 0.0744 0.874996 0.000725 7.1e-05 0.633357</pose>
           <velocity>0 0 0 0 -0 0</velocity>
-          <acceleration>-0.003826 -0.007571 -0.000667 0.075715 -0.038266 0.000121</acceleration>
-          <wrench>-0.000765 -0.001514 -0.000133 0 -0 0</wrench>
-        </link>
-      </model>
-      <model name='washer'>
-        <pose frame=''>0.341582 -0.883176 0.809921 0.003502 -0.010163 0.182756</pose>
-        <scale>1 1 1</scale>
-        <link name='link'>
-          <pose frame=''>0.341573 -0.883181 0.810921 0.003502 -0.010163 0.182756</pose>
-          <velocity>0 0 0 0 -0 0</velocity>
-          <acceleration>5.8e-05 -5.7e-05 -0.000114 0.058641 0.058162 0.001047</acceleration>
-          <wrench>1e-06 -1e-06 -1e-06 0 -0 0</wrench>
+          <acceleration>0 0 0 0 -0 0</acceleration>
+          <wrench>0 0 0 0 -0 0</wrench>
         </link>
       </model>
       <light name='sun'>
@@ -423,7 +443,7 @@
     </state>
     <gui fullscreen='0'>
       <camera name='user_camera'>
-        <pose frame=''>2.55869 2.4 3.33742 -0 0.467642 -2.48381</pose>
+        <pose frame=''>2.68971 2.70704 3.94867 0 0.655642 -2.25581</pose>
         <view_controller>orbit</view_controller>
         <projection_type>perspective</projection_type>
       </camera>
@@ -485,10 +505,10 @@
       </link>
       <pose frame=''>0.855467 0.089174 0 0 -0 0</pose>
     </model>
-    <model name='washer'>
+    <model name='dummy'>
       <static>1</static>
       <link name='link'>
-        <pose frame=''>0 0 0.001 0 -0 0</pose>
+        <pose frame=''>0 0 0 0 -0 0</pose>
         <inertial>
           <mass>0.0122</mass>
           <inertia>
@@ -500,41 +520,59 @@
             <izz>2.16703e-06</izz>
           </inertia>
         </inertial>
+        <visual name='visual'>
+          <geometry>
+            <sphere>
+              <radius>0.05</radius>
+            </sphere>
+          </geometry>
+          <material>
+            <script>
+              <uri>file://media/materials/scripts/gazebo.material</uri>
+              <name>Gazebo/Yellow</name>
+            </script>
+          </material>
+        </visual>
+        <self_collide>0</self_collide>
+        <kinematic>0</kinematic>
+      </link>
+      <pose frame=''>0.168663 -0.702721 0 0 -0 0</pose>
+    </model>
+    <model name='ground_plane'>
+      <static>1</static>
+      <link name='link'>
         <collision name='collision'>
           <geometry>
-            <mesh>
-              <uri>model://washer/meshes/washer.dae</uri>
-            </mesh>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>100 100</size>
+            </plane>
           </geometry>
           <surface>
             <contact>
-              <poissons_ratio>0.305</poissons_ratio>
-              <elastic_modulus>2e+11</elastic_modulus>
-              <ode>
-                <kp>100000</kp>
-                <kd>100</kd>
-                <max_vel>100</max_vel>
-                <min_depth>0.001</min_depth>
-              </ode>
+              <collide_bitmask>65535</collide_bitmask>
+              <ode/>
             </contact>
             <friction>
+              <ode>
+                <mu>100</mu>
+                <mu2>50</mu2>
+              </ode>
               <torsional>
-                <coefficient>1</coefficient>
-                <use_patch_radius>0</use_patch_radius>
-                <surface_radius>0.01</surface_radius>
                 <ode/>
               </torsional>
-              <ode/>
             </friction>
             <bounce/>
           </surface>
           <max_contacts>10</max_contacts>
         </collision>
         <visual name='visual'>
+          <cast_shadows>0</cast_shadows>
           <geometry>
-            <mesh>
-              <uri>model://washer/meshes/washer.dae</uri>
-            </mesh>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>100 100</size>
+            </plane>
           </geometry>
           <material>
             <script>
@@ -546,7 +584,7 @@
         <self_collide>0</self_collide>
         <kinematic>0</kinematic>
       </link>
-      <pose frame=''>0.168663 -0.702721 0 0 -0 0</pose>
+      <pose frame=''>1.04473 0.134028 0 0 -0 0</pose>
     </model>
   </world>
 </sdf>
