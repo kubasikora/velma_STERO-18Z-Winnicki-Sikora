@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <launch>
-    <arg name="use_kinect" default="false"/>
+    <arg name="use_kinect" default="true"/>
     <arg name="world_name" default="worlds/empty.world" />
     <arg name="GAZEBO_MODEL_PATH" default=""/>
     <arg name="GAZEBO_RESOURCE_PATH" default=""/>
