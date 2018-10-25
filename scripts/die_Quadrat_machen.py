@@ -106,7 +106,7 @@ if __name__ == "__main__":
             if not velma.moveJointTraj(traj, start_time=0.5):
                 exitError(5)
             if velma.waitForJoint() == 0:
-                break
+                break      
             else:
                 print "The trajectory could not be completed, retrying..."
                 continue
@@ -119,7 +119,6 @@ if __name__ == "__main__":
         exitError(14)
 
     planAndExecute(q_map_starting)
-
     planAndExecute(q_map_1)
 
     print "Switch to cart_imp mode (no trajectory)..."
