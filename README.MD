@@ -4,8 +4,8 @@ Zespol:
 
 Czlonkowie:
 
-	Sikora Kubus
-	Winnicki Kondziu
+	Konrad Winnicki
+	Jakub Sikora
 	
 Termin laboratorium:
 
