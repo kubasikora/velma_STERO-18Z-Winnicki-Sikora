@@ -1,0 +1,1 @@
+rosrun octomap_server octomap_server_node worlds/octomap.ot
