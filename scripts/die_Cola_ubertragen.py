@@ -48,6 +48,8 @@ if __name__ == "__main__":
     rospy.init_node('proj1_executor')
     rospy.sleep(0.5)
 
+    print "STARTING PHASE 1 - INITIALIZATION"
+
     print "Running python interface for Velma..."
     velma = VelmaInterface()
     print "Waiting for VelmaInterface initialization..."
@@ -80,11 +82,34 @@ if __name__ == "__main__":
     velma = VelmaInterface()
     velma.waitForInit()
     T_B_Jar = velma.getTf("B", "target")
-    print T_B_Jar
+    print T_B_Jar   
+
+    print "Switch to jnt_imp mode (no trajectory)..."
+    velma.moveJointImpToCurrentPos(start_time=0.5)
+    error = velma.waitForJoint()
+
+    print "Moving to position 0"
+    planAndExecute(q_map_starting)
+
+    print "Checking if the starting configuration is as expected..."
+    rospy.sleep(0.5)
+    js = velma.getLastJointState()
+    if not isConfigurationClose(q_map_starting, js[1], tolerance=0.3):
+        print "This test requires starting pose:"
+        print q_map_starting
+        exitError(4)
+
+    print "moving head to position: 0"
+    q_dest = (0,0)
+    velma.moveHead(q_dest, 3.0, start_time=0.5)
+    if velma.waitForHead() != 0:
+	    exitError(5)
+	rospy.sleep(0.5)
+	if not isHeadConfigurationClose( velma.getHeadCurrentConfiguration(), q_dest, 0.1 ):
+        exitError(6)
 
 
-
-    
+    print "STARTING PHASE 2 - GRABBING THE CAN"
 
     
 
