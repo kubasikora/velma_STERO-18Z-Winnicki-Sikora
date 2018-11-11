@@ -104,8 +104,8 @@ if __name__ == "__main__":
     velma.moveHead(q_dest, 3.0, start_time=0.5)
     if velma.waitForHead() != 0:
 	    exitError(5)
-	rospy.sleep(0.5)
-	if not isHeadConfigurationClose( velma.getHeadCurrentConfiguration(), q_dest, 0.1 ):
+    rospy.sleep(0.5)
+    if not isHeadConfigurationClose( velma.getHeadCurrentConfiguration(), q_dest, 0.1 ):
         exitError(6)
 
 
