@@ -1,7 +1,5 @@
 #!/usr/bin/env python2
 
-
-
 import roslib; roslib.load_manifest('velma_task_cs_ros_interface')
 import rospy
 import copy
@@ -12,7 +10,6 @@ from rcprg_ros_utils import exitError
 
  # define a function for frequently used routine in this test
 def planAndExecute(velma, q_dest):
-    print "Planning motion to the goal position using set of all joints..."
     print "Moving to valid position, using planned trajectory."
     goal_constraint = qMapToConstraints(q_dest, 0.01, group=velma.getJointGroup("impedance_joints"))
     for i in range(5):
@@ -68,8 +65,8 @@ def moveToInteractiveCursor(velma):
     if T_B_T_diff.vel.Norm() > 0.05 or T_B_T_diff.rot.Norm() > 0.05:
         exitError(10)
 
-def hideBothHands(velma):
-    dest_q = [90.0/180.0*math.pi, 90.0/180.0*math.pi, 90.0/180.0*math.pi, 180.0/180.0*math.pi]
+def hideRightHand(velma):
+    dest_q = [0.5*math.pi, 0.5*math.pi, 0.5*math.pi, math.pi]
     print "Hiding right fingers..."
     velma.moveHandRight(dest_q, [1,1,1,1], [2000,2000,2000,2000], 1000, hold=True)
     if velma.waitForHandRight() != 0:
@@ -78,13 +75,20 @@ def hideBothHands(velma):
     if not isHandConfigurationClose( velma.getHandRightCurrentConfiguration(), dest_q):
         exitError(11)
 
+def hideLeftHand(velma):
     print "Hiding left fingers..."
+    dest_q = [0.5*math.pi, 0.5*math.pi, 0.5*math.pi, math.pi]
     velma.moveHandLeft(dest_q, [1,1,1,1], [2000,2000,2000,2000], 1000, hold=True)
-    if velma.waitForHandRight() != 0:
+    if velma.waitForHandLeft() != 0:
         exitError(10)
     rospy.sleep(0.5)
-    if not isHandConfigurationClose( velma.getHandRightCurrentConfiguration(), dest_q):
+    if not isHandConfigurationClose( velma.getHandLeftCurrentConfiguration(), dest_q):
         exitError(11)
+
+def hideBothHands(velma):
+    hideLeftHand(velma)
+    hideRightHand(velma)
+
 
 def moveToPositionZero(velma):
     print "Moving to position 0"
@@ -105,8 +109,6 @@ def moveToPositionZero(velma):
         exitError(6)
 
 def findCanOnTable(table0_tf, table1_tf, can_tf):
-    
-    print table0_tf.p
     [t0_x, t0_y, t0_z] = table0_tf.p
     [t1_x, t1_y, t1_z] = table1_tf.p
     [c_x, c_y, c_z] = can_tf.p
@@ -115,6 +117,53 @@ def findCanOnTable(table0_tf, table1_tf, can_tf):
     can_to_t1 = (c_x - t1_x)**2 + (c_y - t1_y)**2 + (c_z - t1_z)**2
 
     return "table0" if can_to_t0 < can_to_t1 else "table1"
+
+def switchToJntMode(velma):
+    velma.moveJointImpToCurrentPos(start_time=0.2)
+    error = velma.waitForJoint()
+    if error != 0:
+        print "The action should have ended without error, but the error code is", error
+        exitError(3)
+ 
+    rospy.sleep(0.5)
+    diag = velma.getCoreCsDiag()
+    if not diag.inStateJntImp():
+        print "The core_cs should be in jnt_imp state, but it is not" 
+        exitError(3)
+
+def switchToCartMode(velma):
+    if not velma.moveCartImpRightCurrentPos(start_time=0.2):
+        print "Cannot moveCartImpRightCurrentPos"
+        exitError(9)
+
+    if velma.waitForEffectorRight() != 0:
+        print "waitForEffectorright error"
+        exitError(8)
+
+    if not velma.moveCartImpLeftCurrentPos(start_time=0.2):
+        print "Cannot moveCartImpLeftCurrentPos"
+        exitError(9)
+
+    if velma.waitForEffectorLeft() != 0:
+        print "waitForEffectorLeft error"
+        exitError(8)
+
+    rospy.sleep(0.5) 
+    diag = velma.getCoreCsDiag()
+    if not diag.inStateCartImp():
+        print "The core_cs should be in cart_imp state, but it is not"
+        exitError(3)
+
+def openRightHand(velma):
+    dest_q = [0, 0, 0, 0]
+    print "Hiding right fingers..."
+    velma.moveHandRight(dest_q, [1,1,1,1], [2000,2000,2000,2000], 1000, hold=True)
+    if velma.waitForHandRight() != 0:
+        exitError(10)
+    rospy.sleep(0.5)
+    if not isHandConfigurationClose( velma.getHandRightCurrentConfiguration(), dest_q):
+        exitError(11)
+
 
 
 if __name__ == "__main__":
@@ -164,8 +213,10 @@ if __name__ == "__main__":
     octomap = oml.getOctomap(timeout_s=5.0)
     p.processWorld(octomap)
 
+    switchToJntMode(velma) 
     moveToPositionZero(velma)
-    #hideBothHands(velma)
+    hideBothHands(velma)  
+    
 
     print "Rotating robot..."
     # can position
@@ -181,12 +232,20 @@ if __name__ == "__main__":
 
     torso_angle = math.atan2(Can_y, Can_x)
     prepareForGrip(velma, torso_angle)
+    
+    switchToCartMode(velma)
+    openRightHand(velma)
+
+    """ EXPERIMENTAL
+    arm_frame = velma.getTf("Wo", "Gr")
+    frame_nearby_can = PyKDL.Frame(arm_frame.M, T_Wo_Can.p-PyKDL.Vector(0.05, 0.05, 0.05))
+    moveInCartMode(velma, frame_nearby_can)
+    """
 
 
     
 
-    #T_B_Trd = PyKDL.Frame(T_Gr_orient.M, PyKDL.Vector(T_B_piwo_world.p[0]-math.cos(kat)*0.1,T_B_piwo_world.p[1]-math.sin(kat)*0.1,T_Gr_orient.p[2])) 
-
+    
 
 
     
