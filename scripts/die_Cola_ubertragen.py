@@ -104,6 +104,18 @@ def moveToPositionZero(velma):
     if not isHeadConfigurationClose( velma.getHeadCurrentConfiguration(), q_dest, 0.1 ):
         exitError(6)
 
+def findCanOnTable(table0_tf, table1_tf, can_tf):
+    
+    print table0_tf.p
+    [t0_x, t0_y, t0_z] = table0_tf.p
+    [t1_x, t1_y, t1_z] = table1_tf.p
+    [c_x, c_y, c_z] = can_tf.p
+
+    can_to_t0 = (c_x - t0_x)**2 + (c_y - t0_y)**2 + (c_z - t0_z)**2
+    can_to_t1 = (c_x - t1_x)**2 + (c_y - t1_y)**2 + (c_z - t1_z)**2
+
+    return "table0" if can_to_t0 < can_to_t1 else "table1"
+
 
 if __name__ == "__main__":
     # define some configurations
@@ -153,11 +165,16 @@ if __name__ == "__main__":
     p.processWorld(octomap)
 
     moveToPositionZero(velma)
-    hideBothHands(velma)
+    #hideBothHands(velma)
 
     print "Rotating robot..."
     # can position
     T_Wo_Can = velma.getTf("Wo", "target") 
+    T_Wo_Table_0 = velma.getTf("Wo", "table0") 
+    T_Wo_Table_1 = velma.getTf("Wo", "table1")
+
+    target_table = findCanOnTable(T_Wo_Table_0, T_Wo_Table_1, T_Wo_Can) # na ktorym stoliku znajduje sie puszka
+
     Can_x = T_Wo_Can.p[0]   
     Can_y = T_Wo_Can.p[1]
     Can_z = T_Wo_Can.p[2]
