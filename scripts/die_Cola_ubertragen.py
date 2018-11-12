@@ -6,7 +6,45 @@ import copy
 
 from velma_common import *
 from rcprg_planner import *
-from rcprg_ros_utils import exitError
+import PyKDL
+from threading import Thread
+
+from rcprg_ros_utils import MarkerPublisher, exitError
+
+from moveit_msgs.msg import AttachedCollisionObject, CollisionObject
+from shape_msgs.msg import SolidPrimitive
+
+from geometry_msgs.msg import Pose
+from visualization_msgs.msg import Marker
+import tf_conversions.posemath as pm
+
+class MarkerPublisherThread:
+    def threaded_function(self, obj):
+        pub = MarkerPublisher("attached_objects")
+        while not self.stop_thread:
+            pub.publishSinglePointMarker(PyKDL.Vector(), 1, r=1, g=0, b=0, a=1, namespace='default', frame_id=obj.link_name, m_type=Marker.CYLINDER, scale=Vector3(0.02, 0.02, 1.0), T=pm.fromMsg(obj.object.primitive_poses[0]))
+            try:
+                rospy.sleep(0.1)
+            except:
+                break
+
+        try:
+            pub.eraseMarkers(0, 10, namespace='default')
+            rospy.sleep(0.5)
+        except:
+            pass
+
+    def __init__(self, obj):
+        self.thread = Thread(target = self.threaded_function, args = (obj, ))
+
+    def start(self):
+        self.stop_thread = False
+        self.thread.start()
+
+    def stop(self):
+        self.stop_thread = True
+        self.thread.join()
+
 
  # define a function for frequently used routine in this test
 def planAndExecute(velma, q_dest):
@@ -275,14 +313,81 @@ if __name__ == "__main__":
     rospy.sleep(0.5)
 	
     print "Moving right gripper up..."	
-    T_B_Trd = PyKDL.Frame(arm_frame.M, T_Wo_Can.p + PyKDL.Vector(0, 0, 0.2))
+    T_B_Trd = PyKDL.Frame(arm_frame.M, T_Wo_Can.p + PyKDL.Vector(0, 0, 0.3))
     if not velma.moveCartImpRight([T_B_Trd], [3.0], None, None, None, None, PyKDL.Wrench(PyKDL.Vector(5,5,5), PyKDL.Vector(5,5,5)), start_time=0.5):
         exitError(8)    
     if velma.waitForEffectorRight() != 0:
         exitError(9)
     rospy.sleep(0.5)
 
-    #PyKDL.Vector(0.2*math.cos(torso_angle), 0.2*math.sin(torso_angle), -0.13)
+    print "Switching to jnt_mode..."
+    switchToJntMode(velma)
+
+
+    if target_table == "table0":
+        T_Wo_Dest = velma.getTf("Wo", "table1")
+    else:
+        T_Wo_Dest = velma.getTf("Wo", "table0")
+    Target_x = T_Wo_Dest.p[0]   
+    Target_y = T_Wo_Dest.p[1]
+    Target_z = T_Wo_Dest.p[2]
+
+    torso_angle = math.atan2(Target_y, Target_x)
+    j = velma.getLastJointState()
+
+    jsl = velma.getLastJointState()[1]
+    jsl['torso_0_joint'] = torso_angle
+
+     # for more details refer to ROS docs for moveit_msgs/AttachedCollisionObject
+    object1 = AttachedCollisionObject()
+    object1.link_name = "right_HandGripLink"
+    object1.object.header.frame_id = "right_HandGripLink"
+    object1.object.id = "object1"
+    object1_prim = SolidPrimitive()
+    object1_prim.type = SolidPrimitive.CYLINDER
+    object1_prim.dimensions=[None, None]    # set initial size of the list to 2
+    object1_prim.dimensions[SolidPrimitive.CYLINDER_HEIGHT] = 0.25
+    object1_prim.dimensions[SolidPrimitive.CYLINDER_RADIUS] = 0.06
+    object1_pose = pm.toMsg(PyKDL.Frame(PyKDL.Rotation.RotY(math.pi/2)))
+    object1.object.primitives.append(object1_prim)
+    object1.object.primitive_poses.append(object1_pose)
+    object1.object.operation = CollisionObject.ADD
+    object1.touch_links = ['right_HandPalmLink',
+        'right_HandFingerOneKnuckleOneLink',
+        'right_HandFingerOneKnuckleTwoLink',
+        'right_HandFingerOneKnuckleThreeLink',
+        'right_HandFingerTwoKnuckleOneLink',
+        'right_HandFingerTwoKnuckleTwoLink',
+        'right_HandFingerTwoKnuckleThreeLink',
+        'right_HandFingerThreeKnuckleTwoLink',
+        'right_HandFingerThreeKnuckleThreeLink']
+
+    print "Publishing the attached object marker on topic /attached_objects"
+    pub = MarkerPublisherThread(object1)
+    pub.start()
+
+    print "Moving to valid position, using planned trajectory."
+    goal_constraint_1 = qMapToConstraints(jsl, 0.01, group=velma.getJointGroup("impedance_joints"))
+    for i in range(3):
+        rospy.sleep(0.5)
+        js = velma.getLastJointState()
+        print "Planning (try", i, ")..."
+        traj = p.plan(js[1], [goal_constraint_1], "impedance_joints", max_velocity_scaling_factor=0.15, planner_id="RRTConnect", attached_collision_objects=[object1])
+        if traj == None:
+            continue
+        print "Executing trajectory..."
+        if not velma.moveJointTraj(traj, start_time=0.5):
+            exitError(5)
+        if velma.waitForJoint() == 0:
+            break
+        else:
+            print "The trajectory could not be completed, retrying..."
+            continue
+    
+
+
+
+
 
 
 
