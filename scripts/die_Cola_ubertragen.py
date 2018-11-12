@@ -32,13 +32,15 @@ def planAndExecute(velma, q_dest):
     if not isConfigurationClose(q_dest, js[1]):
         exitError(6)  
 
-
-def moveInCartMode(velma, T_B_dest):
-    if not velma.moveCartImpRight([T_B_dest], [3.0], None, None, None, None, PyKDL.Wrench(PyKDL.Vector(5,5,5), PyKDL.Vector(5,5,5)), start_time=0.5):
+def moveInCartImpMode(velma, T_B_dest):
+    if not velma.moveCartImpRight([T_B_dest], [5.0], None, None, None, None, PyKDL.Wrench(PyKDL.Vector(5,5,5), PyKDL.Vector(5,5,5)), start_time=0.5):
         exitError(8)
     if velma.waitForEffectorRight() != 0:
         exitError(9)
     rospy.sleep(0.5)
+
+def moveInCartMode(velma, T_B_dest):
+    moveInCartImpMode(velma, T_B_dest)
     T_B_T_diff = PyKDL.diff(T_B_dest, velma.getTf("B", "Gr"), 1.0)
     if T_B_T_diff.vel.Norm() > 0.05 or T_B_T_diff.rot.Norm() > 0.05:
         exitError(10)
@@ -49,7 +51,6 @@ def prepareForGrip(velma, torso_angle):
     planAndExecute(velma, executable_q_map)
 
 def moveToInteractiveCursor(velma):
-    print "Moving to interactive cursor..."
     T_Wo_test = velma.getTf("Wo", "example_frame")
     if not velma.moveCartImpRightCurrentPos(start_time=0.2):
         exitError(8)
@@ -67,16 +68,12 @@ def moveToInteractiveCursor(velma):
 
 def hideRightHand(velma):
     dest_q = [0.5*math.pi, 0.5*math.pi, 0.5*math.pi, math.pi]
-    print "Hiding right fingers..."
     velma.moveHandRight(dest_q, [1,1,1,1], [2000,2000,2000,2000], 1000, hold=True)
     if velma.waitForHandRight() != 0:
         exitError(10)
     rospy.sleep(0.5)
-    if not isHandConfigurationClose( velma.getHandRightCurrentConfiguration(), dest_q):
-        exitError(11)
 
 def hideLeftHand(velma):
-    print "Hiding left fingers..."
     dest_q = [0.5*math.pi, 0.5*math.pi, 0.5*math.pi, math.pi]
     velma.moveHandLeft(dest_q, [1,1,1,1], [2000,2000,2000,2000], 1000, hold=True)
     if velma.waitForHandLeft() != 0:
@@ -84,6 +81,13 @@ def hideLeftHand(velma):
     rospy.sleep(0.5)
     if not isHandConfigurationClose( velma.getHandLeftCurrentConfiguration(), dest_q):
         exitError(11)
+
+def grabWithRightHand(velma):
+    dest_q = [76.0/180.0*math.pi, 76.0/180.0*math.pi, 76.0/180.0*math.pi, 0]
+    velma.moveHandRight(dest_q, [1,1,1,1], [2000,2000,2000,2000], 1000, hold=True)
+    if velma.waitForHandRight() != 0:
+        exitError(10)
+    rospy.sleep(0.5)
 
 def hideBothHands(velma):
     hideLeftHand(velma)
@@ -156,7 +160,6 @@ def switchToCartMode(velma):
 
 def openRightHand(velma):
     dest_q = [0, 0, 0, 0]
-    print "Hiding right fingers..."
     velma.moveHandRight(dest_q, [1,1,1,1], [2000,2000,2000,2000], 1000, hold=True)
     if velma.waitForHandRight() != 0:
         exitError(10)
@@ -213,10 +216,16 @@ if __name__ == "__main__":
     octomap = oml.getOctomap(timeout_s=5.0)
     p.processWorld(octomap)
 
+    print "Switching to jnt_mode..."
     switchToJntMode(velma) 
+
+
+
+    print "Moving to position zero"
     moveToPositionZero(velma)
-    hideBothHands(velma)  
-    
+
+    print "Hiding both hands"
+    hideBothHands(velma)
 
     print "Rotating robot..."
     # can position
@@ -236,11 +245,45 @@ if __name__ == "__main__":
     switchToCartMode(velma)
     openRightHand(velma)
 
-    """ EXPERIMENTAL
+
+    print "Moving the right tool and equilibrium pose from 'wrist' to 'grip' frame..."
+    T_B_Wr = velma.getTf("B", "Wr")
+    T_Wr_Gr = velma.getTf("Wr", "Gr")
+    if not velma.moveCartImpRight([T_B_Wr*T_Wr_Gr], [0.1], [T_Wr_Gr], [0.1], None, None, PyKDL.Wrench(PyKDL.Vector(5,5,5), PyKDL.Vector(5,5,5)), start_time=0.5):
+        exitError(18)
+    if velma.waitForEffectorRight() != 0:
+        exitError(19)
+    print "The right tool is now in 'grip' pose"
+    rospy.sleep(0.5)
+
+    print "Moving grip to can..."
     arm_frame = velma.getTf("Wo", "Gr")
-    frame_nearby_can = PyKDL.Frame(arm_frame.M, T_Wo_Can.p-PyKDL.Vector(0.05, 0.05, 0.05))
-    moveInCartMode(velma, frame_nearby_can)
-    """
+    frame_nearby_can = PyKDL.Frame(arm_frame.M, T_Wo_Can.p+PyKDL.Vector(0, 0, 0.15))
+    moveInCartImpMode(velma, frame_nearby_can)
+
+    print "Grabbing the can..."
+    grabWithRightHand(velma)
+
+    switchToCartMode(velma)
+    T_B_Wr = velma.getTf("B", "Wr")
+    T_Wr_Gr = velma.getTf("Wr", "Gr")
+    if not velma.moveCartImpRight([T_B_Wr*T_Wr_Gr], [0.1], [T_Wr_Gr], [0.1], None, None, PyKDL.Wrench(PyKDL.Vector(5,5,5), PyKDL.Vector(5,5,5)), start_time=0.5):
+        exitError(18)   
+    if velma.waitForEffectorRight() != 0:
+        exitError(19)
+    print "The right tool is now in 'grip' pose"
+    rospy.sleep(0.5)
+	
+    print "Moving right gripper up..."	
+    T_B_Trd = PyKDL.Frame(arm_frame.M, T_Wo_Can.p + PyKDL.Vector(0, 0, 0.2))
+    if not velma.moveCartImpRight([T_B_Trd], [3.0], None, None, None, None, PyKDL.Wrench(PyKDL.Vector(5,5,5), PyKDL.Vector(5,5,5)), start_time=0.5):
+        exitError(8)    
+    if velma.waitForEffectorRight() != 0:
+        exitError(9)
+    rospy.sleep(0.5)
+
+    #PyKDL.Vector(0.2*math.cos(torso_angle), 0.2*math.sin(torso_angle), -0.13)
+
 
 
     
