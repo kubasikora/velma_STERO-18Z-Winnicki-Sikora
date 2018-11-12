@@ -278,6 +278,13 @@ if __name__ == "__main__":
     Can_z = T_Wo_Can.p[2]
 
     torso_angle = math.atan2(Can_y, Can_x)
+    if torso_angle>math.pi/2:
+        torso_angle = math.pi/2-0.1
+    elif torso_angle<-math.pi/2:
+        torso_angle = -math.pi/2+0.1
+    print target_table
+    print "torso angle: "
+    print torso_angle
     prepareForGrip(velma, torso_angle)
     
     switchToCartMode(velma)
@@ -313,7 +320,7 @@ if __name__ == "__main__":
     rospy.sleep(0.5)
 	
     print "Moving right gripper up..."	
-    T_B_Trd = PyKDL.Frame(arm_frame.M, T_Wo_Can.p + PyKDL.Vector(0, 0, 0.3))
+    T_B_Trd = PyKDL.Frame(arm_frame.M, T_Wo_Can.p + PyKDL.Vector(0, 0, 0.8))
     if not velma.moveCartImpRight([T_B_Trd], [3.0], None, None, None, None, PyKDL.Wrench(PyKDL.Vector(5,5,5), PyKDL.Vector(5,5,5)), start_time=0.5):
         exitError(8)    
     if velma.waitForEffectorRight() != 0:
@@ -326,8 +333,10 @@ if __name__ == "__main__":
 
     if target_table == "table0":
         T_Wo_Dest = velma.getTf("Wo", "table1")
+        print "selected table1"
     else:
         T_Wo_Dest = velma.getTf("Wo", "table0")
+        print "selected table2"
     Target_x = T_Wo_Dest.p[0]   
     Target_y = T_Wo_Dest.p[1]
     Target_z = T_Wo_Dest.p[2]
@@ -337,7 +346,7 @@ if __name__ == "__main__":
 
     jsl = velma.getLastJointState()[1]
     jsl['torso_0_joint'] = torso_angle
-
+    print torso_angle
      # for more details refer to ROS docs for moveit_msgs/AttachedCollisionObject
     object1 = AttachedCollisionObject()
     object1.link_name = "right_HandGripLink"
@@ -359,6 +368,7 @@ if __name__ == "__main__":
         'right_HandFingerTwoKnuckleOneLink',
         'right_HandFingerTwoKnuckleTwoLink',
         'right_HandFingerTwoKnuckleThreeLink',
+	'right_HandFingerThreeKnuckleOneLink',
         'right_HandFingerThreeKnuckleTwoLink',
         'right_HandFingerThreeKnuckleThreeLink']
 
@@ -368,7 +378,7 @@ if __name__ == "__main__":
 
     print "Moving to valid position, using planned trajectory."
     goal_constraint_1 = qMapToConstraints(jsl, 0.01, group=velma.getJointGroup("impedance_joints"))
-    for i in range(3):
+    for i in range(5):
         rospy.sleep(0.5)
         js = velma.getLastJointState()
         print "Planning (try", i, ")..."
@@ -376,7 +386,7 @@ if __name__ == "__main__":
         if traj == None:
             continue
         print "Executing trajectory..."
-        if not velma.moveJointTraj(traj, start_time=0.5):
+        if not velma.moveJointTraj(traj, start_time=0.5, stamp=None, position_tol=20.0/180.0*math.pi, velocity_tol=20.0/180.0*math.pi):
             exitError(5)
         if velma.waitForJoint() == 0:
             break
@@ -384,7 +394,7 @@ if __name__ == "__main__":
             print "The trajectory could not be completed, retrying..."
             continue
     
-
+    print "end"
 
 
 
