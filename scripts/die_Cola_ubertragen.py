@@ -256,7 +256,7 @@ if __name__ == "__main__":
 
     print "Switching to jnt_mode..."
     switchToJntMode(velma) 
-
+    
 
 
     print "Moving to position zero"
@@ -326,17 +326,17 @@ if __name__ == "__main__":
     if velma.waitForEffectorRight() != 0:
         exitError(9)
     rospy.sleep(0.5)
-
+    
     print "Switching to jnt_mode..."
     switchToJntMode(velma)
 
-
     if target_table == "table0":
-        T_Wo_Dest = velma.getTf("Wo", "table1")
-        print "selected table1"
+        target_table = "table1"
+        print "go to: table1"
     else:
-        T_Wo_Dest = velma.getTf("Wo", "table0")
-        print "selected table2"
+        target_table = "table0"
+        print "go to: table0"
+    T_Wo_Dest = velma.getTf("Wo", target_table)
     Target_x = T_Wo_Dest.p[0]   
     Target_y = T_Wo_Dest.p[1]
     Target_z = T_Wo_Dest.p[2]
@@ -375,7 +375,7 @@ if __name__ == "__main__":
     print "Publishing the attached object marker on topic /attached_objects"
     pub = MarkerPublisherThread(object1)
     pub.start()
-
+    
     print "Moving to valid position, using planned trajectory."
     goal_constraint_1 = qMapToConstraints(jsl, 0.01, group=velma.getJointGroup("impedance_joints"))
     for i in range(5):
@@ -394,8 +394,44 @@ if __name__ == "__main__":
             print "The trajectory could not be completed, retrying..."
             continue
     
-    print "end"
 
+    print "Move to target table"
+    switchToCartMode(velma)     
+    T_B_table = velma.getTf("B", target_table) 
+    x = T_B_table.p[0]
+    y = T_B_table.p[1]
+    z = T_B_table.p[2]
+    #print "table z: "
+    #print z
+    wsp = 0.4 / math.sqrt(math.pow(y/x,2)+1)
+    if x>0:
+        wsp = -wsp
+    x_new = x + wsp
+    y_new = (y/x)*x_new
+    z_new = 0.8 + 0.5
+
+    torso_angle = math.atan2(y_new, x_new)
+    if torso_angle>math.pi/2:
+        torso_angle = math.pi/2-0.05
+    elif torso_angle<-math.pi/2:
+        torso_angle = -math.pi/2+0.05
+    rot = PyKDL.Rotation.RPY(0, 0, torso_angle)
+    B_T = PyKDL.Frame(rot, PyKDL.Vector(x_new, y_new, z_new)) #tworzenie macierzy jednorodnej do ustawienia chwytaka
+    print "Start gripper move"
+    moveInCartImpMode(velma, B_T)
+    
+    pub.stop()
+    
+    print "release object"
+    openRightHand(velma)
+    print "gripper move back"
+    
+    print "return to start position"
+    hideRightHand(velma)
+    moveToPositionZero(velma)
+
+print "end"
+    
 
 
 
