@@ -125,6 +125,9 @@ def grabWithRightHand(velma):
     velma.moveHandRight(dest_q, [1,1,1,1], [2000,2000,2000,2000], 1000, hold=True)
     if velma.waitForHandRight() != 0:
         exitError(10)
+    if isHandConfigurationClose( velma.getHandRightCurrentConfiguration(), dest_q):
+        print "Couldnt catch the can"
+        exitError(11)
     rospy.sleep(0.5)
 
 def hideBothHands(velma):
@@ -415,7 +418,7 @@ if __name__ == "__main__":
         wsp = -wsp
     x_new = x + wsp
     y_new = (y/x)*x_new
-    z_new = 0.8 + 0.5
+    z_new = 0.8 + 0.3
 
     torso_angle = math.atan2(y_new, x_new)
     if torso_angle>math.pi/2:
@@ -427,12 +430,18 @@ if __name__ == "__main__":
     print "Start gripper move"
     moveInCartImpMode(velma, B_T)
     
+
+    
     pub.stop()
     
     print "release object"
     openRightHand(velma)
     print "gripper move back"
     
+    B_T = PyKDL.Frame(rot, PyKDL.Vector(x_new, y_new, z_new + 0.3)) #tworzenie macierzy jednorodnej do ustawienia chwytaka  
+    print "Pull hand back"
+    moveInCartImpMode(velma, B_T)
+
     print "return to start position"
     hideRightHand(velma)
     moveToPositionZero(velma)
