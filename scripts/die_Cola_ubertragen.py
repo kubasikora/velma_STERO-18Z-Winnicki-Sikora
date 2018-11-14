@@ -342,9 +342,16 @@ if __name__ == "__main__":
     Target_z = T_Wo_Dest.p[2]
 
     torso_angle = math.atan2(Target_y, Target_x)
+
+    if torso_angle>math.pi/2:
+        torso_angle = math.pi/2-0.05
+    elif torso_angle<-math.pi/2:
+        torso_angle = -math.pi/2+0.05
+
     j = velma.getLastJointState()
 
     jsl = velma.getLastJointState()[1]
+
     jsl['torso_0_joint'] = torso_angle
     print torso_angle
      # for more details refer to ROS docs for moveit_msgs/AttachedCollisionObject
@@ -403,7 +410,7 @@ if __name__ == "__main__":
     z = T_B_table.p[2]
     #print "table z: "
     #print z
-    wsp = 0.4 / math.sqrt(math.pow(y/x,2)+1)
+    wsp =   0.6 / math.sqrt(math.pow(y/x,2)+1)
     if x>0:
         wsp = -wsp
     x_new = x + wsp
