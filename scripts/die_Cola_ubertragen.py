@@ -208,7 +208,13 @@ def openRightHand(velma):
     if not isHandConfigurationClose( velma.getHandRightCurrentConfiguration(), dest_q):
         exitError(11)
 
-
+def normalizeTorsoAngle(torso_angle):
+    if torso_angle>math.pi/2:
+        return math.pi/2-0.1
+    elif torso_angle<-math.pi/2:
+        return -math.pi/2+0.1
+    else:
+        return torso_angle
 
 if __name__ == "__main__":
     # define some configurations
@@ -280,11 +286,8 @@ if __name__ == "__main__":
     Can_y = T_Wo_Can.p[1]
     Can_z = T_Wo_Can.p[2]
 
-    torso_angle = math.atan2(Can_y, Can_x)
-    if torso_angle>math.pi/2:
-        torso_angle = math.pi/2-0.1
-    elif torso_angle<-math.pi/2:
-        torso_angle = -math.pi/2+0.1
+    torso_angle = normalizeTorsoAngle(math.atan2(Can_y, Can_x))
+    
     print target_table
     print "torso angle: "
     print torso_angle
@@ -344,12 +347,7 @@ if __name__ == "__main__":
     Target_y = T_Wo_Dest.p[1]
     Target_z = T_Wo_Dest.p[2]
 
-    torso_angle = math.atan2(Target_y, Target_x)
-
-    if torso_angle>math.pi/2:
-        torso_angle = math.pi/2-0.05
-    elif torso_angle<-math.pi/2:
-        torso_angle = -math.pi/2+0.05
+    torso_angle = normalizeTorsoAngle(math.atan2(Target_y, Target_x))
 
     j = velma.getLastJointState()
 
@@ -420,11 +418,7 @@ if __name__ == "__main__":
     y_new = (y/x)*x_new
     z_new = 0.8 + 0.3
 
-    torso_angle = math.atan2(y_new, x_new)
-    if torso_angle>math.pi/2:
-        torso_angle = math.pi/2-0.05
-    elif torso_angle<-math.pi/2:
-        torso_angle = -math.pi/2+0.05
+    torso_angle = normalizeTorsoAngle(math.atan2(y_new, x_new))
     rot = PyKDL.Rotation.RPY(0, 0, torso_angle)
     B_T = PyKDL.Frame(rot, PyKDL.Vector(x_new, y_new, z_new)) #tworzenie macierzy jednorodnej do ustawienia chwytaka
     print "Start gripper move"
