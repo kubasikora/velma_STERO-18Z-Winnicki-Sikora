@@ -13,9 +13,9 @@ from rcprg_ros_utils import MarkerPublisher, exitError
 
 
  # define a function for frequently used routine in this test
-def planAndExecute(velma, q_dest):
+def planAndExecute(velma, q_dest, pos_tol=10.0/180.0*math.pi):
     print "Moving to valid position"
-    velma.moveJoint(q_dest, 2, start_time=0.5, position_tol=10.0/180.0*math.pi)
+    velma.moveJoint(q_dest, 2, start_time=0.5, position_tol=pos_tol)
     if velma.waitForJoint() != 0:
         exitError(4)
 
@@ -25,20 +25,33 @@ def planAndExecute(velma, q_dest):
         exitError(6)  
 
 #funkcja realizujaca zmiane impedancji
-def setImpedance(velma, lx, ly, lz, rx, ry, rz):
+def setImpedanceRight(velma, imp_p_x, imp_p_y, imp_p_z, imp_r_x, imp_r_y, imp_r_z):
 
-    if not velma.moveCartImpRight(None, None, None, None, [PyKDL.Wrench(PyKDL.Vector(lx,ly,lz), PyKDL.Vector(rx,ry,rz))], [2], PyKDL.Wrench(PyKDL.Vector(5,5,5), PyKDL.Vector(5,5,5)), start_time=0.1):
+    if not velma.moveCartImpRight(None, None, None, None, [PyKDL.Wrench(PyKDL.Vector(imp_p_x, imp_p_y, imp_p_z), PyKDL.Vector(imp_r_x, imp_r_y, imp_r_z))], [2], PyKDL.Wrench(PyKDL.Vector(5,5,5), PyKDL.Vector(5,5,5)), start_time=0.5):
         exitError(101)
     if velma.waitForEffectorRight() != 0:
         exitError(102)
     rospy.sleep(1)
 
-def moveInCartImpMode(velma, T_B_dest):
-    if not velma.moveCartImpRight([T_B_dest], [5.0], None, None, None, None, PyKDL.Wrench(PyKDL.Vector(5,5,5), PyKDL.Vector(5,5,5)), start_time=0.5):
+def relativePosition(Transfer, deltaX, deltaY, deltaZ):
+    (rotX, rotY, rotZ) = Transfer.M.GetRPY()
+    posX = Transfer.p.x() + math.cos(rotZ)*deltaX - math.sin(rotZ)*deltaY
+    posY = Transfer.p.y() + math.sin(rotZ)*deltaX + math.cos(rotZ)*deltaY
+    posZ = Transfer.p.z() + deltaZ
+    angle = rotZ - math.pi
+    if angle < -math.pi:
+        angle = 2*math.pi + angle
+    return [posX, posY, posZ, angle]
+
+def moveInCartImpMode(velma, T_B_dest, tol = 10):
+    if not velma.moveCartImpRight([T_B_dest], [5.0], None, None, None, None, PyKDL.Wrench(PyKDL.Vector(5,5,5), PyKDL.Vector(5,5,5)), start_time=0.1, path_tol=PyKDL.Twist(PyKDL.Vector(tol, tol, tol), PyKDL.Vector(tol, tol, tol))):
         exitError(8)
     if velma.waitForEffectorRight() != 0:
-        exitError(9)
-    rospy.sleep(0.5)
+        if not velma.moveCartImpRightCurrentPos(start_time=0.01):
+            exitError(9)
+        return False
+    else:
+        return True
 
 def moveInCartMode(velma, T_B_dest):
     moveInCartImpMode(velma, T_B_dest)
@@ -207,21 +220,23 @@ if __name__ == "__main__":
     if not diag.motorsReady():
         print "Motors must be homed and ready to use for this test."
         exitError(1)
-
+    
     print "Switching to jnt_mode..."
     switchToJntMode(velma) 
     
     print "Moving to position zero"
-    moveToPositionZero(velma)
+    #moveToPositionZero(velma)
 
     print "Hiding both hands"
     hideBothHands(velma)
 
     print "Rotating robot..."
     # can position
-    T_Wo_Cabinet = velma.getTf("Wo", "cabinet_door_right") 
+    
+    T_Wo_Cabinet = velma.getTf("Wo", "cabinet_door") 
+    T_B_Cabinet = velma.getTf("B", "cabinet_door") 
     # do wyboru:
-    # "cabinet_door_cabinet"
+    # "cabinet_door"
     # "cabinet_door_right"
     # "cabinet_door_left"
 
@@ -236,30 +251,28 @@ if __name__ == "__main__":
     prepareForGrip(velma, torso_angle)
     
     switchToCartMode(velma)
+        
+    print "Moving gripper near to door..."
+    (x, y, z, yaw) = relativePosition(T_B_Cabinet, 0.45, 0.1, 0.1)
+    targetFrame = PyKDL.Frame(PyKDL.Rotation.RPY(0, 0, yaw), PyKDL.Vector(x, y, z))
+    moveInCartImpMode(velma, targetFrame)
+    
+    print "Try to find door"
+    setImpedanceRight(velma, 300, 300, 900, 200, 200, 200)
+    (x, y, z, yaw) = relativePosition(T_B_Cabinet, 0.3, 0.1, 0.1)
+    targetFrame = PyKDL.Frame(PyKDL.Rotation.RPY(0, 0, yaw), PyKDL.Vector(x, y, z))
+    if moveInCartImpMode(velma, targetFrame, 0.1)==True:
+        print "Door not found"
+        exitError(404)
+    else:
+        print "Door found"
+    
+    print "Move back after door found"
+    (x, y, z, yaw) = relativePosition(T_B_Cabinet, 0.45, 0.1, 0.1)
+    targetFrame = PyKDL.Frame(PyKDL.Rotation.RPY(0, 0, yaw), PyKDL.Vector(x, y, z))
+    moveInCartImpMode(velma, targetFrame, 10)
 
-
-    print "Moving the right tool and equilibrium pose from 'wrist' to 'grip' frame..."
-    T_B_Wr = velma.getTf("B", "Wr")
-    T_Wr_Gr = velma.getTf("Wr", "Gr")
-    if not velma.moveCartImpRight([T_B_Wr*T_Wr_Gr], [0.1], [T_Wr_Gr], [0.1], None, None, PyKDL.Wrench(PyKDL.Vector(5,5,5), PyKDL.Vector(5,5,5)), start_time=0.5):
-        exitError(18)
-    if velma.waitForEffectorRight() != 0:
-        exitError(19)
-    print "The right tool is now in 'grip' pose"
-    rospy.sleep(0.5)
-
-    print "Moving grip to can..."
-    arm_frame = velma.getTf("Wo", "Gr")
-    frame_nearby_cabinet = PyKDL.Frame(arm_frame.M, T_Wo_Cabinet.p+PyKDL.Vector(0, 0, 0))
-    setImpedance(velma, 1000, 1000, 1000, 150, 150, 150)
-    moveInCartImpMode(velma, frame_nearby_cabinet)
-
-
-
-
-    print "return to start position"
-    hideRightHand(velma)
-    moveToPositionZero(velma)
+    # Tutaj proponuje zrobic snapshot
 
 print "end"
     
