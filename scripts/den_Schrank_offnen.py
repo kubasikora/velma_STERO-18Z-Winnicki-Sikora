@@ -24,6 +24,15 @@ def planAndExecute(velma, q_dest):
     if not isConfigurationClose(q_dest, js[1]):
         exitError(6)  
 
+#funkcja realizujaca zmiane impedancji
+def setImpedance(velma, lx, ly, lz, rx, ry, rz):
+
+    if not velma.moveCartImpRight(None, None, None, None, [PyKDL.Wrench(PyKDL.Vector(lx,ly,lz), PyKDL.Vector(rx,ry,rz))], [2], PyKDL.Wrench(PyKDL.Vector(5,5,5), PyKDL.Vector(5,5,5)), start_time=0.1):
+        exitError(101)
+    if velma.waitForEffectorRight() != 0:
+        exitError(102)
+    rospy.sleep(1)
+
 def moveInCartImpMode(velma, T_B_dest):
     if not velma.moveCartImpRight([T_B_dest], [5.0], None, None, None, None, PyKDL.Wrench(PyKDL.Vector(5,5,5), PyKDL.Vector(5,5,5)), start_time=0.5):
         exitError(8)
@@ -242,6 +251,7 @@ if __name__ == "__main__":
     print "Moving grip to can..."
     arm_frame = velma.getTf("Wo", "Gr")
     frame_nearby_cabinet = PyKDL.Frame(arm_frame.M, T_Wo_Cabinet.p+PyKDL.Vector(0, 0, 0))
+    setImpedance(velma, 1000, 1000, 1000, 150, 150, 150)
     moveInCartImpMode(velma, frame_nearby_cabinet)
 
 
