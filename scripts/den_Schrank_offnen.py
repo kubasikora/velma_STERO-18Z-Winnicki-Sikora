@@ -14,23 +14,11 @@ from rcprg_ros_utils import MarkerPublisher, exitError
 
  # define a function for frequently used routine in this test
 def planAndExecute(velma, q_dest):
-    print "Moving to valid position, using planned trajectory."
-    goal_constraint = qMapToConstraints(q_dest, 0.01, group=velma.getJointGroup("impedance_joints"))
-    for i in range(5):
-        rospy.sleep(0.5)
-        js = velma.getLastJointState()
-        print "Planning (try", i, ")..."
-        traj = p.plan(js[1], [goal_constraint], "impedance_joints", max_velocity_scaling_factor=0.15, planner_id="RRTConnect")
-        if traj == None:
-            continue
-        print "Executing trajectory..."
-        if not velma.moveJointTraj(traj, start_time=0.5):
-            exitError(5)
-        if velma.waitForJoint() == 0:
-            break      
-        else:
-            print "The trajectory could not be completed, retrying..."
-            continue
+    print "Moving to valid position"
+    velma.moveJoint(q_dest, 2, start_time=0.5, position_tol=10.0/180.0*math.pi)
+    if velma.waitForJoint() != 0:
+        exitError(4)
+
     rospy.sleep(0.5)
     js = velma.getLastJointState()
     if not isConfigurationClose(q_dest, js[1]):
@@ -108,8 +96,9 @@ def moveToPositionZero(velma):
     error = velma.waitForJoint()
 
     print "Moving body to position 0"
-    planAndExecute(velma, q_map_starting)
-
+    velma.moveJoint(q_map_starting, 3, start_time=0.5, position_tol=10.0/180.0*math.pi)
+    if velma.waitForJoint() != 0:
+        exitError(4)
     print "Moving head to position: 0"
     q_dest = (0,0)
     velma.moveHead(q_dest, 3.0, start_time=0.5)
@@ -210,11 +199,6 @@ if __name__ == "__main__":
         print "Motors must be homed and ready to use for this test."
         exitError(1)
 
-    p = Planner(velma.maxJointTrajLen())
-    if not p.waitForInit():
-        print "could not initialize Planner"
-        exitError(2)
-
     print "Switching to jnt_mode..."
     switchToJntMode(velma) 
     
@@ -243,7 +227,6 @@ if __name__ == "__main__":
     prepareForGrip(velma, torso_angle)
     
     switchToCartMode(velma)
-    openRightHand(velma)
 
 
     print "Moving the right tool and equilibrium pose from 'wrist' to 'grip' frame..."
@@ -258,14 +241,16 @@ if __name__ == "__main__":
 
     print "Moving grip to can..."
     arm_frame = velma.getTf("Wo", "Gr")
-    frame_nearby_can = PyKDL.Frame(arm_frame.M, T_Wo_Can.p+PyKDL.Vector(0, 0, 0.15))
-    moveInCartImpMode(velma, frame_nearby_can)
+    frame_nearby_cabinet = PyKDL.Frame(arm_frame.M, T_Wo_Cabinet.p+PyKDL.Vector(0, 0, 0))
+    moveInCartImpMode(velma, frame_nearby_cabinet)
 
-"""
+
+
+
     print "return to start position"
     hideRightHand(velma)
     moveToPositionZero(velma)
-"""
+
 print "end"
     
 
