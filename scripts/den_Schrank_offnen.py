@@ -177,6 +177,15 @@ def openRightHand(velma):
     if not isHandConfigurationClose( velma.getHandRightCurrentConfiguration(), dest_q):
         exitError(11)
 
+def openLeftHand(velma):
+    dest_q = [0, 0, 0, 0]
+    velma.moveHandLeft(dest_q, [1,1,1,1], [2000,2000,2000,2000], 1000, hold=True)
+    if velma.waitForHandLeft() != 0:
+        exitError(10)
+    rospy.sleep(0.5)
+    if not isHandConfigurationClose( velma.getHandLeftCurrentConfiguration(), dest_q):
+        exitError(11)
+
 def normalizeTorsoAngle(torso_angle):
     if torso_angle>math.pi/2:
         return math.pi/2-0.1
@@ -310,9 +319,6 @@ if __name__ == "__main__":
     
 
     print "Part 2: open the door wider "
-    #targetFrame = PyKDL.Frame(PyKDL.Rotation.RPY(0, 0, yaw), PyKDL.Vector(start_x - cabinet_radius, start_y - cabinet_radius, stpt_z))
-    #moveInCartImpMode(velma, targetFrame, 10)
-
     (stpt_x, stpt_y, stpt_z, yaw) = relativePosition(T_B_Cabinet, 0.7, cabinet_radius/2, 0.15)
     targetFrame = PyKDL.Frame(PyKDL.Rotation.RPY(0, 0, yaw), PyKDL.Vector(stpt_x, stpt_y, stpt_z))
     moveInCartImpMode(velma, targetFrame, 10)
@@ -321,7 +327,15 @@ if __name__ == "__main__":
     targetFrame = PyKDL.Frame(PyKDL.Rotation.RPY(0, 0, yaw), PyKDL.Vector(stpt_x, stpt_y, stpt_z))
     moveInCartImpMode(velma, targetFrame, 10)
 
+    print "Pull hand back"
+    (stpt_x, stpt_y, stpt_z, yaw) = relativePosition(T_B_Cabinet, 0.7, cabinet_radius + 0.2, 0.15)
+    targetFrame = PyKDL.Frame(PyKDL.Rotation.RPY(0, 0, yaw), PyKDL.Vector(stpt_x, stpt_y, stpt_z))
+    moveInCartImpMode(velma, targetFrame, 10)
 
+    print "Back to default position"
+    moveToPositionZero(velma)
+    openLeftHand(velma)
+    openRightHand(velma)
 
 print "end"
     
