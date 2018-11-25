@@ -4,6 +4,7 @@ import roslib;
 roslib.load_manifest('velma_task_cs_ros_interface')
 import rospy
 import copy
+import math
 
 from velma_common import *
 #from rcprg_planner import *
@@ -226,10 +227,10 @@ if __name__ == "__main__":
     switchToJntMode(velma) 
     
     print "Moving to position zero"
-    #moveToPositionZero(velma)
+    moveToPositionZero(velma)
 
     print "Hiding both hands"
-    #hideBothHands(velma)
+    hideBothHands(velma)
 
     print "Rotating robot..."
     # cabinet position
@@ -277,17 +278,48 @@ if __name__ == "__main__":
     targetFrame = PyKDL.Frame(PyKDL.Rotation.RPY(0, 0, yaw), PyKDL.Vector(x, y, z))
     moveInCartImpMode(velma, targetFrame, 10)
 
-    act_pos = velma.getTf("Wo", "Gr")
-    print act_pos.p 
-
     # Tutaj proponuje zrobic snapshot
     print "Move right hand a little bit to the left"
     (x, y, z, yaw) = relativePosition(T_B_Cabinet, 0.4, -0.2, 0.15)
-    print x, y, z
     targetFrame = PyKDL.Frame(PyKDL.Rotation.RPY(0, 0, yaw), PyKDL.Vector(x, y, z))
     moveInCartImpMode(velma, targetFrame, 10)
 
+    #target_pos = targetFrame.p
+    #(target_x, target_y, target_z) = target_pos.p
 
+    start_pos = velma.getTf("B", "Gr")
+    (start_x, start_y, start_z) = start_pos.p
+
+    # Part 1 - jazda po prostej
+    print "Part 1: pulling hand back"
+    (stpt_x, stpt_y, stpt_z, yaw) = relativePosition(T_B_Cabinet, 0.7, 0, 0.15)
+    targetFrame = PyKDL.Frame(PyKDL.Rotation.RPY(0, 0, yaw), PyKDL.Vector(stpt_x, stpt_y, stpt_z))
+    moveInCartImpMode(velma, targetFrame, 10)
+
+    act_pos = velma.getTf("B", "Gr")
+    (act_x, act_y, act_z) = act_pos.p
+
+
+    act_to_start = math.sqrt((act_x - start_x) ** 2 + (act_y - start_y) ** 2)
+    act_to_stpt = math.sqrt((act_x - stpt_x) ** 2 + (act_y - stpt_y) ** 2)
+    start_to_stpt = math.sqrt((start_x - stpt_x) ** 2 + (start_y - stpt_y) ** 2)
+
+    cabinet_radius = start_to_stpt * act_to_start / act_to_stpt
+
+    print cabinet_radius
+    
+
+    print "Part 2: open the door wider "
+    #targetFrame = PyKDL.Frame(PyKDL.Rotation.RPY(0, 0, yaw), PyKDL.Vector(start_x - cabinet_radius, start_y - cabinet_radius, stpt_z))
+    #moveInCartImpMode(velma, targetFrame, 10)
+
+    (stpt_x, stpt_y, stpt_z, yaw) = relativePosition(T_B_Cabinet, 0.7, cabinet_radius/2, 0.15)
+    targetFrame = PyKDL.Frame(PyKDL.Rotation.RPY(0, 0, yaw), PyKDL.Vector(stpt_x, stpt_y, stpt_z))
+    moveInCartImpMode(velma, targetFrame, 10)
+
+    (stpt_x, stpt_y, stpt_z, yaw) = relativePosition(T_B_Cabinet, 0.7, cabinet_radius, 0.15)
+    targetFrame = PyKDL.Frame(PyKDL.Rotation.RPY(0, 0, yaw), PyKDL.Vector(stpt_x, stpt_y, stpt_z))
+    moveInCartImpMode(velma, targetFrame, 10)
 
 
 
