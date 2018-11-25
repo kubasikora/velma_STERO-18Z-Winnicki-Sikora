@@ -270,7 +270,8 @@ if __name__ == "__main__":
     moveInCartImpMode(velma, targetFrame)
     
     print "Try to find door"
-    setImpedanceRight(velma, 300, 300, 900, 200, 200, 200)
+    setImpedanceRight(velma, 100, 100, 900, 200, 200, 200)
+
     (x, y, z, yaw) = relativePosition(T_B_Cabinet, 0.3, 0.1, 0.1)
     targetFrame = PyKDL.Frame(PyKDL.Rotation.RPY(0, 0, yaw), PyKDL.Vector(x, y, z))
     if moveInCartImpMode(velma, targetFrame, 0.1)==True:
@@ -283,13 +284,13 @@ if __name__ == "__main__":
     switchToCartMode(velma)
 
     print "Move back after door found"
-    (x, y, z, yaw) = relativePosition(T_B_Cabinet, 0.4, 0.1, 0.15)
+    (x, y, z, yaw) = relativePosition(T_B_Cabinet, 0.4, 0.1, 0.1)
     targetFrame = PyKDL.Frame(PyKDL.Rotation.RPY(0, 0, yaw), PyKDL.Vector(x, y, z))
     moveInCartImpMode(velma, targetFrame, 10)
 
     # Tutaj proponuje zrobic snapshot
     print "Move right hand a little bit to the left"
-    (x, y, z, yaw) = relativePosition(T_B_Cabinet, 0.4, -0.2, 0.15)
+    (x, y, z, yaw) = relativePosition(T_B_Cabinet, 0.4, -0.2, 0.1)
     targetFrame = PyKDL.Frame(PyKDL.Rotation.RPY(0, 0, yaw), PyKDL.Vector(x, y, z))
     moveInCartImpMode(velma, targetFrame, 10)
 
@@ -298,6 +299,11 @@ if __name__ == "__main__":
 
     start_pos = velma.getTf("B", "Gr")
     (start_x, start_y, start_z) = start_pos.p
+
+
+    print "changing impedance"
+    setImpedanceRight(velma, 300, 300, 900, 200, 200, 200)
+
 
     # Part 1 - jazda po prostej
     print "Part 1: pulling hand back"
