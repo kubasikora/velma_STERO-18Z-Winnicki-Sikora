@@ -1,11 +1,12 @@
 #!/usr/bin/env python2
 
-import roslib; roslib.load_manifest('velma_task_cs_ros_interface')
+import roslib; 
+roslib.load_manifest('velma_task_cs_ros_interface')
 import rospy
 import copy
 
 from velma_common import *
-from rcprg_planner import *
+#from rcprg_planner import *
 import PyKDL
 
 from rcprg_ros_utils import MarkerPublisher, exitError
@@ -37,7 +38,7 @@ def relativePosition(Transfer, deltaX, deltaY, deltaZ):
     (rotX, rotY, rotZ) = Transfer.M.GetRPY()
     posX = Transfer.p.x() + math.cos(rotZ)*deltaX - math.sin(rotZ)*deltaY
     posY = Transfer.p.y() + math.sin(rotZ)*deltaX + math.cos(rotZ)*deltaY
-    posZ = Transfer.p.z() + deltaZ
+    posZ = Transfer.p.z() + deltaZ 
     angle = rotZ - math.pi
     if angle < -math.pi:
         angle = 2*math.pi + angle
@@ -228,10 +229,10 @@ if __name__ == "__main__":
     #moveToPositionZero(velma)
 
     print "Hiding both hands"
-    hideBothHands(velma)
+    #hideBothHands(velma)
 
     print "Rotating robot..."
-    # can position
+    # cabinet position
     
     T_Wo_Cabinet = velma.getTf("Wo", "cabinet_door") 
     T_B_Cabinet = velma.getTf("B", "cabinet_door") 
@@ -250,6 +251,7 @@ if __name__ == "__main__":
     print torso_angle
     prepareForGrip(velma, torso_angle)
     
+    print "switching to cart mode..."
     switchToCartMode(velma)
         
     print "Moving gripper near to door..."
@@ -267,12 +269,27 @@ if __name__ == "__main__":
     else:
         print "Door found"
     
+
+    switchToCartMode(velma)
+
     print "Move back after door found"
-    (x, y, z, yaw) = relativePosition(T_B_Cabinet, 0.45, 0.1, 0.1)
+    (x, y, z, yaw) = relativePosition(T_B_Cabinet, 0.4, 0.1, 0.15)
     targetFrame = PyKDL.Frame(PyKDL.Rotation.RPY(0, 0, yaw), PyKDL.Vector(x, y, z))
     moveInCartImpMode(velma, targetFrame, 10)
 
+    act_pos = velma.getTf("Wo", "Gr")
+    print act_pos.p 
+
     # Tutaj proponuje zrobic snapshot
+    print "Move right hand a little bit to the left"
+    (x, y, z, yaw) = relativePosition(T_B_Cabinet, 0.4, -0.2, 0.15)
+    print x, y, z
+    targetFrame = PyKDL.Frame(PyKDL.Rotation.RPY(0, 0, yaw), PyKDL.Vector(x, y, z))
+    moveInCartImpMode(velma, targetFrame, 10)
+
+
+
+
 
 print "end"
     
