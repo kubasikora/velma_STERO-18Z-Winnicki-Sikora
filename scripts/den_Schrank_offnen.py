@@ -287,7 +287,7 @@ if __name__ == "__main__":
 
 
     print "Move right hand a little bit to the left"
-    (x, y, z, yaw) = relativePosition(T_B_Cabinet, 0.4, -0.2, 0.1)
+    (x, y, z, yaw) = relativePosition(T_B_Cabinet, 0.4, 0.0, 0.1)
     targetFrame = PyKDL.Frame(PyKDL.Rotation.RPY(0, 0, yaw), PyKDL.Vector(x, y, z))
     moveInCartImpMode(velma, targetFrame, 10)
 
@@ -301,8 +301,8 @@ if __name__ == "__main__":
     print "changing impedance"
     setImpedanceRight(velma, 100, 100, 200, 100, 100, 100)
     
-    print "close right hand"
-    grabWithRightHand(velma)
+    #print "close right hand"
+    #grabWithRightHand(velma)
 
     # Part 1 - jazda po prostej
     print "Part 1: pulling hand back"
@@ -325,25 +325,25 @@ if __name__ == "__main__":
 
     print "Part 2: open the door wider "
     print "go to point 1"
-    (stpt_x, stpt_y, stpt_z, yaw) = relativePosition(T_B_Cabinet, 0.7, cabinet_radius/2, 0.15)
+    (stpt_x, stpt_y, stpt_z, yaw) = relativePosition(T_B_Cabinet, 0.75, cabinet_radius/2, 0.15)
     targetFrame = PyKDL.Frame(PyKDL.Rotation.RPY(0, 0, yaw+45.0/180*math.pi), PyKDL.Vector(stpt_x, stpt_y, stpt_z))
     moveInCartImpMode(velma, targetFrame, 10)
 
     print "go to point 2"
-    (stpt_x, stpt_y, stpt_z, yaw) = relativePosition(T_B_Cabinet, 0.7, cabinet_radius, 0.15)
+    (stpt_x, stpt_y, stpt_z, yaw) = relativePosition(T_B_Cabinet, 0.75, cabinet_radius, 0.15)
     targetFrame = PyKDL.Frame(PyKDL.Rotation.RPY(0, 0, yaw+60.0/180*math.pi), PyKDL.Vector(stpt_x, stpt_y, stpt_z))
     moveInCartImpMode(velma, targetFrame, 10)
 
-    print "Pull hand back"
-    (stpt_x, stpt_y, stpt_z, yaw) = relativePosition(T_B_Cabinet, 0.7, cabinet_radius + 0.2, 0.15)
-    targetFrame = PyKDL.Frame(PyKDL.Rotation.RPY(0, 0, yaw+60.0/180*math.pi), PyKDL.Vector(stpt_x, stpt_y, stpt_z))
+    print "go to point 3"
+    (stpt_x, stpt_y, stpt_z, yaw) = relativePosition(T_B_Cabinet, 0.7, cabinet_radius + 0.3, 0.15)
+    targetFrame = PyKDL.Frame(PyKDL.Rotation.RPY(0, 0, yaw+90.0/180*math.pi), PyKDL.Vector(stpt_x, stpt_y, stpt_z))
     moveInCartImpMode(velma, targetFrame, 10)
 
     rospy.sleep(2.0)
     print "release hand"
-    hideRightHand(velma)
-    (stpt_x, stpt_y, stpt_z, yaw) = relativePosition(T_B_Cabinet, 0.7, cabinet_radius + 0.2, 0.3)
-    targetFrame = PyKDL.Frame(PyKDL.Rotation.RPY(0, 0, yaw+60.0/180*math.pi), PyKDL.Vector(stpt_x, stpt_y, stpt_z))
+    #hideRightHand(velma)
+    (stpt_x, stpt_y, stpt_z, yaw) = relativePosition(T_B_Cabinet, 0.30, cabinet_radius+0.4 , 0.15)
+    targetFrame = PyKDL.Frame(PyKDL.Rotation.RPY(0, 0, yaw+80.0/180*math.pi), PyKDL.Vector(stpt_x, stpt_y, stpt_z))
     moveInCartImpMode(velma, targetFrame, 10)
 
     rospy.sleep(2.0)
