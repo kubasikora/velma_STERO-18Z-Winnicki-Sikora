@@ -117,7 +117,7 @@ def moveToPositionZero(velma):
     error = velma.waitForJoint()
 
     print "Moving body to position 0"
-    velma.moveJoint(q_map_starting, 3, start_time=0.5, position_tol=10.0/180.0*math.pi)
+    velma.moveJoint(q_map_starting, 5, start_time=0.5, position_tol=10.0/180.0*math.pi)
     if velma.waitForJoint() != 0:
         exitError(4)
     print "Moving head to position: 0"
@@ -287,7 +287,7 @@ if __name__ == "__main__":
 
 
     print "Move right hand a little bit to the left"
-    (x, y, z, yaw) = relativePosition(T_B_Cabinet, 0.4, 0.0, 0.1)
+    (x, y, z, yaw) = relativePosition(T_B_Cabinet, 0.4, -0.1, 0.1)
     targetFrame = PyKDL.Frame(PyKDL.Rotation.RPY(0, 0, yaw), PyKDL.Vector(x, y, z))
     moveInCartImpMode(velma, targetFrame, 10)
 
@@ -341,14 +341,20 @@ if __name__ == "__main__":
 
     rospy.sleep(2.0)
     print "release hand"
-    #hideRightHand(velma)
     (stpt_x, stpt_y, stpt_z, yaw) = relativePosition(T_B_Cabinet, 0.30, cabinet_radius+0.4 , 0.15)
     targetFrame = PyKDL.Frame(PyKDL.Rotation.RPY(0, 0, yaw+80.0/180*math.pi), PyKDL.Vector(stpt_x, stpt_y, stpt_z))
     moveInCartImpMode(velma, targetFrame, 10)
-
+    rospy.sleep(2.0)
+    (stpt_x, stpt_y, stpt_z, yaw) = relativePosition(T_B_Cabinet, 0.55, cabinet_radius+0.55 , -0.35)
+    targetFrame = PyKDL.Frame(PyKDL.Rotation.RPY(0, 0, yaw+0.0/180*math.pi), PyKDL.Vector(stpt_x, stpt_y, stpt_z))
+    moveInCartImpMode(velma, targetFrame, 10)
+    
+    
     rospy.sleep(2.0)
     print "Back to default position"
+    rospy.sleep(2.0)
     moveToPositionZero(velma)
+    rospy.sleep(2.0)
     openLeftHand(velma)
     openRightHand(velma)
 
